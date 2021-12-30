@@ -21,20 +21,20 @@ mysql> SELECT SNUM,SNAME,CITY,COMM FROM Salespeople;
 +------+---------+--------+--------+------+
 3) Find the largest order taken by each salesperson on each date.
 
-mysql> SELECT SNUM ,ODATE,MAX(AMT) AS MAX_AMT FROM ORDERS GROUP BY ODATE,SNUM;
-+------+------------+---------+
-| SNUM | ODATE      | MAX_AMT |
-+------+------------+---------+
-| 1007 | 1990-10-03 | 1098.16 |
-| 1001 | 1990-10-03 |  767.19 |
-| 1004 | 1990-10-03 | 1900.10 |
-| 1002 | 1990-10-03 | 5160.45 |
-| 1003 | 1990-10-04 | 1713.23 |
-| 1002 | 1990-10-04 |   75.75 |
-| 1001 | 1990-10-05 | 4723.00 |
-| 1002 | 1990-10-06 | 1309.95 |
-| 1001 | 1990-10-06 | 9891.88 |
-+------+------------+---------+
+mysql> SELECT Orders.SNUM,Salespeople.SNAME ,Orders.ODATE,MAX(AMT) AS MAX_AMT FROM ORDERS,Salespeople  GROUP BY ODATE,SNUM;
++------+-------+------------+---------+
+| SNUM | SNAME | ODATE      | MAX_AMT |
++------+-------+------------+---------+
+| 1007 | Fran  | 1990-10-03 | 1098.16 |
+| 1001 | Fran  | 1990-10-03 |  767.19 |
+| 1004 | Fran  | 1990-10-03 | 1900.10 |
+| 1002 | Fran  | 1990-10-03 | 5160.45 |
+| 1003 | Fran  | 1990-10-04 | 1713.23 |
+| 1002 | Fran  | 1990-10-04 |   75.75 |
+| 1001 | Fran  | 1990-10-05 | 4723.00 |
+| 1002 | Fran  | 1990-10-06 | 1309.95 |
+| 1001 | Fran  | 1990-10-06 | 9891.88 |
++------+-------+------------+---------+
 4) Arrange the Order table by descending customer number.
 
 mysql> SELECT CNUM,ONUM,AMT,ODATE,SNUM FROM ORDERS ORDER BY CNUM DESC;
@@ -79,16 +79,17 @@ mysql> SELECT c.CNAME,s.SNAME FROM Customers c, Salespeople s WHERE  c.SNUM = s.
 +----------+---------+
 7) Find the names and numbers of all salespeople who have more than one customer.
 
-mysql> SELECT c.SNUM,s.SNAME,COUNT(*) AS Customer_NO FROM Customers c, Salespeople s WHERE  c.SNUM = s.SNUM GROUP BY c.SNUM;
-+------+---------+-------------+
-| SNUM | SNAME   | Customer_NO |
-+------+---------+-------------+
-| 1001 | Peel    |           2 |
-| 1002 | Serres  |           2 |
-| 1003 | AxelRod |           1 |
-| 1004 | Motika  |           1 |
-| 1007 | Rifkin  |           1 |
-+------+---------+-------------+
+mysql> SELECT Customers.SNUM,Salespeople.SNAME,COUNT(Customers.SNUM) AS Customers_NO  
+       FROM Customers , Salespeople 
+       WHERE  Customers.SNUM = Salespeople.SNUM  
+       GROUP BY Customers.SNUM 
+       HAVING COUNT(Customers.SNUM)>1 ;
++------+--------+--------------+
+| SNUM | SNAME  | Customers_NO |
++------+--------+--------------+
+| 1001 | Peel   |            2 |
+| 1002 | Serres |            2 |
++------+--------+--------------+
 8) Count the orders of each of the salespeople and output the results in descending order.
 
 mysql> SELECT o.SNUM,s.SNAME,COUNT(*) AS ORDER_NO FROM Orders o, Salespeople s WHERE  o.SNUM = s.SNUM GROUP By o.SNUM ORDER BY ORDER_NO DESC;
@@ -169,12 +170,12 @@ mysql>  SELECT c.CNUM,c.CNAME,c.CITY,c.RATING,c.SNUM,o.ODATE FROM Customers c,Or
 
 15) Give the sums of the amounts from the Orders table, grouped by date, eliminating all those dates where the SUM was not at least 2000 above
 the maximum Amount.
-mysql> SELECT ODATE,SUM(AMT) AS Total_AMT FROM Orders GROUP BY ODATE;
+
+mysql>  SELECT ODATE,SUM(AMT) AS Total_AMT FROM Orders GROUP BY ODATE HAVING SUM(AMT)>2000;
 +------------+-----------+
 | ODATE      | Total_AMT |
 +------------+-----------+
 | 1990-10-03 |   8944.59 |
-| 1990-10-04 |   1788.98 |
 | 1990-10-05 |   4723.00 |
 | 1990-10-06 |  11201.83 |
 +------------+-----------+
@@ -230,27 +231,38 @@ mysql> SELECT CONCAT (COMM,'%') AS PERCENTAGE FROM Salespeople;
 | 25%        |
 +------------+
 20) Find the largest order taken by each salesperson on each date, eliminating those Maximum orders, which are less than 3000.
-mysql> SELECT o.SNUM,o.ODATE,SUM(O.AMT) AS Largest_Orders FROM Orders o,Salespeople s WHERE  o.SNUM =s.SNUM AND o.AMT > 3000 GROUP BY o.ODATE;
-+------+------------+----------------+
-| SNUM | ODATE      | Largest_Orders |
-+------+------------+----------------+
-| 1002 | 1990-10-03 |        5160.45 |
-| 1001 | 1990-10-05 |        4723.00 |
-| 1001 | 1990-10-06 |        9891.88 |
-+------+------------+----------------+
+
+mysql>  SELECT Salespeople.SNAME,Orders.SNUM,Orders.ODATE,SUM(Orders.AMT) AS Largest_Orders 
+        FROM Orders ,Salespeople  
+        WHERE  Orders.SNUM =Salespeople.SNUM AND Orders.AMT > 3000 GROUP BY Orders.ODATE;
++--------+------+------------+----------------+
+| SNAME  | SNUM | ODATE      | Largest_Orders |
++--------+------+------------+----------------+
+| Serres | 1002 | 1990-10-03 |        5160.45 |
+| Peel   | 1001 | 1990-10-05 |        4723.00 |
+| Peel   | 1001 | 1990-10-06 |        9891.88 |
++--------+------+------------+----------------+
 21) List all the largest orders for October 3, for each salesperson.
-mysql> SELECT o.SNUM,o.ODATE,SUM(O.AMT) AS Largest_Orders FROM Orders o,Salespeople s WHERE  o.SNUM =s.SNUM AND o.ODATE = ' 1990-10-03 ' GROUP BY o.SNUM;
-+------+------------+----------------+
-| SNUM | ODATE      | Largest_Orders |
-+------+------------+----------------+
-| 1007 | 1990-10-03 |        1116.85 |
-| 1001 | 1990-10-03 |         767.19 |
-| 1004 | 1990-10-03 |        1900.10 |
-| 1002 | 1990-10-03 |        5160.45 |
-+------+------------+----------------+
+
+mysql>  SELECT Salespeople.SNAME,Orders.SNUM,Orders.ODATE,SUM(Orders.AMT) AS Largest_Orders 
+        FROM Orders ,Salespeople  
+        WHERE  Orders.SNUM = Salespeople.SNUM AND Orders.ODATE = ' 1990-10-03 ' GROUP BY Orders.SNUM;
++--------+------+------------+----------------+
+| SNAME  | SNUM | ODATE      | Largest_Orders |
++--------+------+------------+----------------+
+| Rifkin | 1007 | 1990-10-03 |        1116.85 |
+| Peel   | 1001 | 1990-10-03 |         767.19 |
+| Motika | 1004 | 1990-10-03 |        1900.10 |
+| Serres | 1002 | 1990-10-03 |        5160.45 |
++--------+------+------------+----------------+
 
 22) Find all customers located in cities where Serres has customers.
-mysql> SELECT CNUM,CNAME,CITY FROM Customers WHERE SNUM IN (SELECT SNUM FROM Salespeople WHERE SNUM = 1002);
+
+mysql> SELECT CNUM,CNAME,CITY
+       FROM Customers 
+       WHERE SNUM IN (SELECT SNUM 
+					  FROM Salespeople 
+					  WHERE SNAME = 'Serres');
 +------+-------+---------+
 | CNUM | CNAME | CITY    |
 +------+-------+---------+
@@ -296,20 +308,10 @@ mysql> SELECT SNUM, COUNT(SNUM) AS Total_Customers FROM Customers GROUP BY SNUM 
 | 1002 |               2 |
 +------+-----------------+
 27) Find salespeople with customers located in their own cities.
-mysql> SELECT s.SNAME,c.CNAME,s.CITY FROM Salespeople s JOIN  Customers c ON s.CITY = c.CITY ORDER BY  c.city;
-+--------+----------+---------+
-| SNAME  | CNAME    | CITY    |
-+--------+----------+---------+
-| Fran   | Hoffman  | London  |
-| Motika | Hoffman  | London  |
-| Peel   | Hoffman  | London  |
-| Fran   | Clemens  | London  |
-| Motika | Clemens  | London  |
-| Peel   | Clemens  | London  |
-| Serres | Liu      | SanJose |
-| Serres | Cisneros | SanJose |
-+--------+----------+---------+
-mysql> SELECT s.SNAME,c.CNAME,s.CITY FROM Salespeople s,Customers c WHERE s.SNUM = c.SNUM AND s.CITY = c.CITY;
+
+mysql> SELECT Salespeople.SNAME,Customers.CNAME,Salespeople.CITY 
+       FROM Salespeople,Customers  
+       WHERE Salespeople.SNUM = Customers.SNUM AND Salespeople.CITY = Customers.CITY;
 +--------+---------+---------+
 | SNAME  | CNAME   | CITY    |
 +--------+---------+---------+
@@ -591,15 +593,15 @@ mysql> SELECT ONUM FROM Orders WHERE AMT =0 OR AMT IS NULL;
 Empty set (0.00 sec)
 55) Produce all combinations of salespeople and customer names such that the former precedes the latter alphabetically, and the latter has a
 rating of less than 200.
-mysql> SELECT Salespeople.SNUM,Customers.CNAME,Customers.RATING 
-	   FROM Salespeople,Customers 
-       WHERE Customers.SNUM=Salespeople.SNUM AND Customers.RATING>200;
-+------+----------+--------+
-| SNUM | CNAME    | RATING |
-+------+----------+--------+
-| 1002 | Grass    |    300 |
-| 1007 | Cisneros |    300 |
-+------+----------+--------+
+
+mysql> SELECT Salespeople.SNUM,Customers.CNAME,Customers.RATING    FROM Salespeople,Customers        WHERE Customers.SNUM=Salespeople.SNUM AND Customers.RATING<200;
++------+---------+--------+
+| SNUM | CNAME   | RATING |
++------+---------+--------+
+| 1001 | Hoffman |    100 |
+| 1001 | Clemens |    100 |
+| 1004 | Pereira |    100 |
++------+---------+--------+
 56) Find all salespeople name and commission.
 mysql> SELECT SNAME,COMM
     -> FROM Salespeople;
@@ -821,14 +823,19 @@ mysql> SELECT SNAME,CITY,COMM FROM Salespeople WHERE CITY ='LonDon' and COMM>10;
 | Fran   | London |   25 |
 +--------+--------+------+
 80) Write a query that selects each customer’s smallest order.
-mysql> SELECT Customers.CNUM,Customers.CNAME,Orders.ONUM,Orders.AMT 
-       FROM Customers,Orders 
-       WHERE Customers.CNUM=Orders.CNUM HAVING MIN(Orders.AMT);
-+------+----------+------+-------+
-| CNUM | CNAME    | ONUM | AMT   |
-+------+----------+------+-------+
-| 2008 | Cisneros | 3001 | 18.69 |
-+------+----------+------+-------+
+
+mysql> SELECT CNUM,MIN(AMT) AS MIN FROM Orders GROUP BY CNUM;
++------+---------+
+| CNUM | MIN     |
++------+---------+
+| 2008 |   18.69 |
+| 2001 |  767.19 |
+| 2007 | 1900.10 |
+| 2003 | 5160.45 |
+| 2002 | 1713.23 |
+| 2004 |   75.75 |
+| 2006 | 4723.00 |
++------+---------+
 81) Write a query that selects the first customer in alphabetical order whose name begins with ‘G’.
 mysql> SELECT MIN(CNAME) FROM Customers WHERE CNAME LIKE 'G%';
 +------------+
@@ -950,16 +957,20 @@ mysql> SELECT COUNT(CNUM) AS Customers
 |         7 |
 +-----------+
 96) On which date has each salesman booked an order of maximum value?
-mysql> SELECT ODATE,ONUM,AMT FROM Orders  WHERE AMT IN(SELECT MAX(AMT) FROM Orders GROUP BY SNUM);
-+------------+------+---------+
-| ODATE      | ONUM | AMT     |
-+------------+------+---------+
-| 1990-10-03 | 3002 | 1900.10 |
-| 1990-10-03 | 3005 | 5160.45 |
-| 1990-10-03 | 3006 | 1098.16 |
-| 1990-10-04 | 3009 | 1713.23 |
-| 1990-10-06 | 3011 | 9891.88 |
-+------------+------+---------+
+
+mysql>  SELECT  SNAME,ODATE,ONUM,AMT 
+        FROM Orders,Salespeople  
+        WHERE Salespeople.SNUM =Orders.SNUM AND AMT IN(SELECT MAX(AMT) 
+                                                       FROM Orders GROUP BY SNUM);
++---------+------------+------+---------+
+| SNAME   | ODATE      | ONUM | AMT     |
++---------+------------+------+---------+
+| Motika  | 1990-10-03 | 3002 | 1900.10 |
+| Serres  | 1990-10-03 | 3005 | 5160.45 |
+| Rifkin  | 1990-10-03 | 3006 | 1098.16 |
+| AxelRod | 1990-10-04 | 3009 | 1713.23 |
+| Peel    | 1990-10-06 | 3011 | 9891.88 |
++---------+------------+------+---------+
 97) Who is the most successful salesperson?
 98) Which customers have the same rating?
 mysql> SELECT DISTINCT T1.CNUM,T1.CNAME,T1.RATING FROM Customers T1,Customers T2 WHERE T1.SNUM = T2.SNUM AND T1.RATING=T2.RATING;
@@ -1020,19 +1031,20 @@ mysql> SELECT Salespeople.SNUM,Salespeople.SNAME
 105) Does the total amount in orders by customer in Rome and London, exceed the commission paid to salesperson in London, and New York by
 more than 5 times?
 106) Which are the date, order number, amt and city for each salesperson (by name) for themaximum order he has obtained?
-mysql> SELECT ODATE,ONUM,AMT,CITY 
+
+mysql> SELECT SNAME,ODATE,ONUM,AMT,CITY 
        FROM Orders,Salespeople  
        WHERE Orders.SNUM=Salespeople.SNUM AND AMT IN (SELECT MAX(AMT) 
                                                       FROM Orders GROUP BY SNUM);
-+------------+------+---------+-----------+
-| ODATE      | ONUM | AMT     | CITY      |
-+------------+------+---------+-----------+
-| 1990-10-03 | 3002 | 1900.10 | London    |
-| 1990-10-03 | 3005 | 5160.45 | SanJose   |
-| 1990-10-03 | 3006 | 1098.16 | Barcelona |
-| 1990-10-04 | 3009 | 1713.23 | New York  |
-| 1990-10-06 | 3011 | 9891.88 | London    |
-+------------+------+---------+-----------+
++---------+------------+------+---------+-----------+
+| SNAME   | ODATE      | ONUM | AMT     | CITY      |
++---------+------------+------+---------+-----------+
+| Motika  | 1990-10-03 | 3002 | 1900.10 | London    |
+| Serres  | 1990-10-03 | 3005 | 5160.45 | SanJose   |
+| Rifkin  | 1990-10-03 | 3006 | 1098.16 | Barcelona |
+| AxelRod | 1990-10-04 | 3009 | 1713.23 | New York  |
+| Peel    | 1990-10-06 | 3011 | 9891.88 | London    |
++---------+------------+------+---------+-----------+
 107) Which salesperson is having lowest commission?
 mysql> SELECT SNUM,SNAME,COMM FROM Salespeople WHERE COMM IN(SELECT MIN(COMM) FROM Salespeople );
 +------+---------+------+
